@@ -24,7 +24,7 @@ def least_square_grad(w, X, y):
     #           Input: w, X, y
     #           Output: g = nabla F(w)
     #
-    return (X.T@X@w - (X.T@y).reshape(-1))/len(y)
+    return (X.T@X@w - X.T@y)/len(y)
 
 def least_square_pred(w, X):
     # Function that computes the prediction from the Linear Least Squares function
@@ -41,7 +41,7 @@ def logistic_func(w, X, y):
     #
     #           Input: w, X, y
     #           Output: F(w) = \sum_{i = 1}^n log(1 + exp(-y_iX_iw))/n
-    
+    #
     return np.mean(np.log(1 + np.exp(-y * (X@w))))
 
 def logistic_grad(w, X, y):
@@ -50,13 +50,17 @@ def logistic_grad(w, X, y):
     #           Input: w, X, y
     #           Output: g = nabla F(w)
     #                   where F(w) = \sum_{i = 1}^n log(1 + exp(-y_iX_iw))/n
-
+    #
     # temp = np.exp(y * (X@w))
     # return np.mean((-y / (1 + temp)).reshape((-1, 1)) * X, axis=0)
     temp = np.exp(y * (-X@w))
-    
     return np.mean((-y * temp / (1 + temp)).reshape((-1, 1)) * X, axis=0)
 
 def logistic_pred(w, X):
+    # Function that computes the prediction from the Logistic Regression function
+    #
+    #           Input: w, X, y
+    #           Output: prediction = sign(Xw)
+    #
     return np.sign(X@w) 
     

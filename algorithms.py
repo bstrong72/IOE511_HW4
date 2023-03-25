@@ -38,3 +38,23 @@ def GDStep(x, f, g, problem, method, options):
 
     return x_new, f_new, g_new, d, alpha
 
+
+def SGDStep(w, loss_f, loss_g, X, y, alpha, problem, method, options):
+    # Function that: (1) computes the SGD step; and
+    #                (2) updates the iterate
+    # 
+    #           Inputs: w, loss_f, loss_g, X, y, alpha, problem, method, options
+    #           Outputs: w_new, loss_f_new(None), loss_g_new(None), d, alpha
+
+    # draw random sample
+    sample_idx = np.random.randint(0, len(X), method.options.batch_size)
+    X_sample = X[sample_idx]
+    y_sample = y[sample_idx]
+    loss_g = problem.compute_g(w, X_sample, y_sample)
+
+    # search direction is -g
+    d = -loss_g
+    w_new = w - alpha * d
+    loss_f_new = None
+    loss_g_new = None
+    return w_new, loss_f_new, loss_g_new, d, alpha

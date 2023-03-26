@@ -54,7 +54,7 @@ def SGDStep(w, loss_f, loss_g, X, y, alpha, problem, method, options):
 
     # search direction is -g
     d = -loss_g
-    w_new = w - alpha * d
+    w_new = w + alpha * d
     loss_f_new = None
     loss_g_new = None
     return w_new, loss_f_new, loss_g_new, d, alpha

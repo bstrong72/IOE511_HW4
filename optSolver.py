@@ -20,9 +20,6 @@ def optSolver_Strong_Benjamin(problem, method, options):
 
     # s_list = []
     # y_list = []
-    # Compute initial norm, set norm of x0
-    norm_g = np.linalg.norm(g, ord=np.inf)
-    norm_g_w0 = np.linalg.norm(g, ord=np.inf)
 
     # set initial iteration counter
     k = 0
@@ -66,7 +63,6 @@ def optSolver_Strong_Benjamin(problem, method, options):
         # print(options.term_tol*np.linalg.norm(s_list[-1], ord=2)*np.linalg.norm(y_list[-1], ord=2))
 
         # alpha_list.append(alpha)
-        # update norm for termination condition use
-        norm_g = np.linalg.norm(g, ord=np.inf)
+
         # uncomment these to get values for plots
     return w, f, k_list, plot_vals #, alpha_list

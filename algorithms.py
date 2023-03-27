@@ -14,7 +14,7 @@ def GDStep(w, f, g, X, y, problem, method, options):
     # determine step size
     if method.step_type == 'Constant':
         # set alphas and compute new x based on step size
-        alpha = method.constant_step_size
+        alpha = method.step_size
         w_new = w + alpha * d
 
         # Compute new values of f, g , H
@@ -23,7 +23,7 @@ def GDStep(w, f, g, X, y, problem, method, options):
 
     elif method.step_type == 'Backtracking':
         # initialize constants for backtracking subroutine
-        alpha = 1
+        alpha = method.step_size
         c1 = 1e-4
         Tau = 0.5
 
@@ -41,15 +41,17 @@ def GDStep(w, f, g, X, y, problem, method, options):
     return w_new, f_new, g_new, d, alpha
 
 
-def SGDStep(w, loss_f, loss_g, X, y, alpha, problem, method, options):
+def SGDStep(w, loss_f, loss_g, X, y, problem, method, options):
     # Function that: (1) computes the SGD step; and
     #                (2) updates the iterate
     # 
-    #           Inputs: w, loss_f, loss_g, X, y, alpha, problem, method, options
+    #           Inputs: w, loss_f, loss_g, X, y, problem, method, options
     #           Outputs: w_new, loss_f_new(None), loss_g_new(None), d, alpha
 
+    alpha = method.step_size
+
     # draw random sample
-    sample_idx = np.random.randint(0, len(X), method.options.batch_size)
+    sample_idx = np.random.randint(0, len(X), options.batch_size)
     X_sample = X[sample_idx]
     y_sample = y[sample_idx]
     loss_g = problem.compute_g(w, X_sample, y_sample)
@@ -57,7 +59,7 @@ def SGDStep(w, loss_f, loss_g, X, y, alpha, problem, method, options):
     # search direction is -g
     d = -loss_g
     w_new = w + alpha * d
-    loss_f_new = None
+    loss_f_new = problem.compute_f(w_new, X, y)
     loss_g_new = None
     return w_new, loss_f_new, loss_g_new, d, alpha
 

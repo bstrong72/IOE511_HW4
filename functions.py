@@ -49,8 +49,8 @@ def logistic_grad(w, X, y):
     #           Output: g = nabla F(w)
     #                   where F(w) = \sum_{i = 1}^n log(1 + exp(-y_iX_iw))/n
     #
-    # temp = np.exp(y * (X@w))
-    # return np.mean((-y / (1 + temp)).reshape((-1, 1)) * X, axis=0)
+#     temp = np.exp(y * (X@w))
+#     return np.mean((-y / (1 + temp)).reshape((-1, 1)) * X, axis=0)
     temp = np.exp(y * (-X@w))
     return np.mean(np.dot((-y * temp / (1 + temp)), X))
 

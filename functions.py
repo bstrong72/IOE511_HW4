@@ -16,8 +16,6 @@ def least_square_func(w, X, y):
     #
     return np.mean((X@w - y)**2)/2
 
-
-
 def least_square_grad(w, X, y):
     # Function that computes the gradient of the Linear Least Squares function
     #
@@ -54,7 +52,7 @@ def logistic_grad(w, X, y):
     # temp = np.exp(y * (X@w))
     # return np.mean((-y / (1 + temp)).reshape((-1, 1)) * X, axis=0)
     temp = np.exp(y * (-X@w))
-    return np.mean((-y * temp / (1 + temp)).reshape((-1, 1)) * X, axis=0)
+    return np.mean(np.dot((-y * temp / (1 + temp)), X))
 
 def logistic_pred(w, X):
     # Function that computes the prediction from the Logistic Regression function

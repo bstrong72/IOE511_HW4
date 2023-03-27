@@ -1,93 +1,114 @@
 # IOE 511/MATH 562, University of Michigan
-# Code written by: Albert S. Berahas & Jiahao Shi
+# Code written by: Jiale Zha
 
-# Function that runs a chosen algorithm on a chosen problem
-#           Inputs: problem, method, options (structs)
-#           Outputs: final iterate (x) and final function value (f)
+# Run a chosen optiomization algorithm on a chosen ML problem
 
 import numpy as np
-import functions as fnc
-import algorithms as alg
+import functions
+import algorithms 
+
+def optSolverML_with_tracker(problem, method, options):
+    # Function that runs a chosen algorithm on a chosen problem and tracks
+    # behaviour of target function and step size
+    #
+    #           Inputs: problem, method, options (classes)
+    #           Outputs: final weight (w), 
+    #                    training loss over epochs (loss_train_trace),
+    #                    training accuracy over epochs (acc_train_trace),
+    #                    test loss over epochs (loss_test_trace),
+    #                    test accuracy over epochs (acc_test_trace) 
 
 
-def optSolver_Strong_Benjamin(problem, method, options):
-    # compute initial function/gradient/Hessian or inverse hessian approximation
+    # load dataset and initial weight
     x = problem.x0
-    f = problem.compute_f(x)
-    g = problem.compute_g(x)
+    X_train = problem.X_train
+    y_train = problem.y_train.reshape(-1)
+    X_test = problem.X_test
+    y_test = problem.y_test.reshape(-1)
+    n = len(y_train) + len(y_test) # total sample size
 
-    # s_list = []
-    # y_list = []
-    # Compute initial norm, set norm of x0
-    norm_g = np.linalg.norm(g, ord=np.inf)
-    norm_g_x0 = np.linalg.norm(g, ord=np.inf)
+    # set weight and step size update functions and number of iterations per epoch
+    if method.name == 'GradientDescent':
+        # set weight update functions: Gradient Descent
+        weight_update_func = algorithms.GDStep
 
-    # set initial iteration counter
-    k = 0
-    # code for plotting ks and alphas
-    k_list = []
-    # initialize y values for plot
-    plot_vals = []
-    # alpha_list = []
+        # set constant step size
+        step_size_update_func = lambda alpha_bar, k: alpha_bar
 
-    # Set x star based on problem
-    """if problem.name == 'Quadratic2':
-        f_star = -1.02685110
-    elif problem.name == 'Quadratic10':
-        f_star = -11.7334285
-    elif problem.name == 'Rosenbrock':
-        f_star = 0
-    else:
-        print('Warning: function is not implemented yet')"""
+        # one gradient evaluation per epoch
+        num_steps = 1
 
+    elif method.name == 'StochasticGradient':
+        # set weight update functions: Stochastic Gradient Descent
+        weight_update_func = algorithms.SGDStep
 
-    # while termination conditions are not met perform this loop
-    while norm_g > options.term_tol * max(norm_g_x0, 1) and k < options.max_iterations:
-        #print(norm_g)
-        #print(options.term_tol * max(norm_g_x0, 1))
-        # Compute new x, g, H, f based on the selected method and options
-        if method.name == 'GradientDescent':
-            x_new, f_new, g_new, H_new, d, alpha = alg.GDStep(x, f, g, H, problem, method, options)
-        #elif method.name == 'Newton':
-        #    x_new, f_new, g_new, H_new, d, alpha = alg.Newton_Step(x, f, g, H, problem, method, options)
-        #elif method.name == 'Mod_Newton':
-        #    x_new, f_new, g_new, H_new, d, alpha = alg.Mod_Newton_Step(x, f, g, H, problem, method, options)
-        #elif method.name == 'BFGS':
-        #    x_new, f_new, g_new, H_new, d, alpha = alg.BFGS_Step(x, f, g, H_inv, problem, method, options)
-        #elif method.name == 'LBFGS':
-        #    x_new, f_new, g_new, d, alpha, s_k, y_k = alg.L_BFGS_Step(x, f, g, H_inv, problem, method, options, k, s_list, y_list)
+        # number of updates depend on batch size
+        num_steps = int(n / method.options.batch_size) + 1
+        
+        if method.options.step_type == 'Constant':
+            # set constant step size
+            step_size_update_func = lambda alpha_bar, k: alpha_bar
+
+        elif  method.options.step_type == 'Diminishing':
+            # set diminishing step size
+            step_size_update_func = lambda alpha_bar, k: alpha_bar/k
+
         else:
-            print('Warning: method is not implemented yet')
+            print('Warning: Step size not specified yet!')
+    else:
+        print('Warning: Optimization method not implemented yet!')
 
-        # update old and new function values        
-        """x_old = x
-        f_old = f
-        g_old = g
-        norm_g_old = norm_g"""
+    # trackers for loss function value and step size
+    alpha_bar = method.options.alpha_bar
+    loss_train_trace = []
+    loss_test_trace = []
+    acc_train_trace = []
+    acc_test_trace = []
+    
+    # initial loss and gradient
+    loss_f = problem.compute_f(x, X_train, y_train)
+    loss_g = problem.compute_g(x, X_train, y_train)
 
-        # increment iteration counter
-        # k_list.append(k)
-        # plot_vals.append(f)
+    for epoch in range(options.num_epoch):
+        for k in range(num_steps):
+            # update step size
+            alpha_k = step_size_update_func(alpha_bar, epoch * num_steps + k + 1)
 
-        # Assign new values into corresponding variables
-        x = x_new
-        f = f_new
-        g = g_new
-        if method.name != 'LBFGS':
-            H = H_new
-            H_inv = H_new
+            x_new, loss_f_new, loss_g_new, d, alpha_k = weight_update_func(
+                x, loss_f, loss_g, X_train, y_train, alpha_k, 
+                problem, method, options)
+        
+            # update weight, loss and gradient
+            x = x_new
+            loss_f = loss_f_new
+            loss_g = loss_g_new
+
+        # record current loss and accuracy
+        loss_train_trace.append(problem.compute_f(x, X_train, y_train))
+        loss_test_trace.append(problem.compute_f(x, X_test, y_test))
+        acc_train_trace.append(np.mean(problem.pred_func(x, X_train) == y_train))
+        acc_test_trace.append(np.mean(problem.pred_func(x, X_test) == y_test))
+ 
+    return (x, 
+            np.array(loss_train_trace), 
+            np.array(acc_train_trace), 
+            np.array(loss_test_trace),
+            np.array(acc_test_trace)
+            )
 
 
+def optSolverML(problem,method,options):
+    # Function that runs a chosen algorithm on a chosen ML problem
+    #           Inputs: problem, method, options (classes)
+    #           Outputs: final iterate (x), final training loss and accuracy
+    #                    final test loss and accuracy
 
-        # update sk and yk update counter (may not be the same as iterations
-        k += 1
-
-        #print(list(y_list))
-        #print(list(s_list))
-        #print(options.term_tol*np.linalg.norm(s_list[-1], ord=2)*np.linalg.norm(y_list[-1], ord=2))
-
-        # alpha_list.append(alpha)
-        # update norm for termination condition use
-        norm_g = np.linalg.norm(g, ord=np.inf)
-                # uncomment these to get values for plots
-    return x, f, # k_list, plot_vals, alpha_list
+    (x, loss_train_trace, acc_train_trace, 
+     loss_test_trace, acc_test_trace) = optSolverML_with_tracker(
+        problem, method, options)
+    return (x, 
+            loss_train_trace[-1], 
+            acc_train_trace[-1], 
+            loss_test_trace[-1], 
+            acc_test_trace[-1]
+            )
